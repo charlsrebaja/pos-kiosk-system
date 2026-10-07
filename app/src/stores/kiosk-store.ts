@@ -1,14 +1,19 @@
 import { createStore } from "zustand/vanilla";
 import { productsById } from "../data/products";
-import type { CartItem, OrderLine, ProductId } from "../types/kiosk";
+import type { CartItem, KioskScreen, OrderLine, ProductId } from "../types/kiosk";
 
 export interface KioskState {
+  screen: KioskScreen;
   items: CartItem[];
   feedback: string;
   addItem: (productId: ProductId) => void;
   decreaseItem: (productId: ProductId) => void;
   removeItem: (productId: ProductId) => void;
   setQuantity: (productId: ProductId, quantity: number) => void;
+  reviewOrder: () => void;
+  backToItems: () => void;
+  continueToPayment: () => void;
+  backToSummary: () => void;
 }
 
 export function getOrderLines(items: readonly CartItem[]): OrderLine[] {
@@ -28,8 +33,21 @@ export function getItemCount(items: readonly CartItem[]): number {
 
 export function createKioskStore() {
   return createStore<KioskState>()((set, get) => ({
+    screen: "items",
     items: [],
     feedback: "",
+    reviewOrder: () => {
+      if (get().screen === "items" && get().items.length > 0) set({ screen: "summary" });
+    },
+    backToItems: () => {
+      if (get().screen === "summary") set({ screen: "items" });
+    },
+    continueToPayment: () => {
+      if (get().screen === "summary" && get().items.length > 0) set({ screen: "method" });
+    },
+    backToSummary: () => {
+      if (get().screen === "method" && get().items.length > 0) set({ screen: "summary" });
+    },
     setQuantity: (productId, quantity) => {
       const product = productsById[productId];
       if (!product || !Number.isSafeInteger(quantity) || quantity < 0) {
@@ -57,7 +75,7 @@ export function createKioskStore() {
           ? `${product.name} added. Quantity: ${quantity}.`
           : `${product.name} quantity updated to ${quantity}.`;
 
-      set({ items, feedback });
+      set({ items, feedback, ...(items.length === 0 ? { screen: "items" as const } : {}) });
     },
     addItem: (productId) => {
       const quantity = get().items.find((item) => item.productId === productId)?.quantity ?? 0;
