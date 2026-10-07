@@ -1,0 +1,78 @@
+import { createStore } from "zustand/vanilla";
+import { productsById } from "../data/products";
+import type { CartItem, OrderLine, ProductId } from "../types/kiosk";
+
+export interface KioskState {
+  items: CartItem[];
+  feedback: string;
+  addItem: (productId: ProductId) => void;
+  decreaseItem: (productId: ProductId) => void;
+  removeItem: (productId: ProductId) => void;
+  setQuantity: (productId: ProductId, quantity: number) => void;
+}
+
+export function getOrderLines(items: readonly CartItem[]): OrderLine[] {
+  return items.map(({ productId, quantity }) => {
+    const product = productsById[productId];
+    return { ...product, quantity, subtotalCentavos: product.unitPriceCentavos * quantity };
+  });
+}
+
+export function getTotalCentavos(items: readonly CartItem[]): number {
+  return getOrderLines(items).reduce((sum, line) => sum + line.subtotalCentavos, 0);
+}
+
+export function getItemCount(items: readonly CartItem[]): number {
+  return items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+export function createKioskStore() {
+  return createStore<KioskState>()((set, get) => ({
+    items: [],
+    feedback: "",
+    setQuantity: (productId, quantity) => {
+      const product = productsById[productId];
+      if (!product || !Number.isSafeInteger(quantity) || quantity < 0) {
+        set({ feedback: "Please use a whole, nonnegative quantity." });
+        return;
+      }
+
+      const remainingItems = get().items.filter((item) => item.productId !== productId);
+      const nextTotal = getTotalCentavos(remainingItems) + product.unitPriceCentavos * quantity;
+      if (!Number.isSafeInteger(nextTotal)) {
+        set({ feedback: "That quantity is too large. Please choose a smaller amount." });
+        return;
+      }
+
+      const existingItem = get().items.find((item) => item.productId === productId);
+      const items = quantity === 0
+        ? remainingItems
+        : existingItem
+          ? get().items.map((item) => item.productId === productId ? { ...item, quantity } : item)
+          : [...get().items, { productId, quantity }];
+
+      const feedback = quantity === 0
+        ? `${product.name} removed from your order.`
+        : !existingItem || quantity > existingItem.quantity
+          ? `${product.name} added. Quantity: ${quantity}.`
+          : `${product.name} quantity updated to ${quantity}.`;
+
+      set({ items, feedback });
+    },
+    addItem: (productId) => {
+      const quantity = get().items.find((item) => item.productId === productId)?.quantity ?? 0;
+      get().setQuantity(productId, quantity + 1);
+    },
+    decreaseItem: (productId) => {
+      const item = get().items.find((entry) => entry.productId === productId);
+      if (item) get().setQuantity(productId, item.quantity - 1);
+    },
+    removeItem: (productId) => {
+      if (get().items.some((item) => item.productId === productId)) {
+        get().setQuantity(productId, 0);
+      }
+    },
+  }));
+}
+
+export type KioskStore = ReturnType<typeof createKioskStore>;
