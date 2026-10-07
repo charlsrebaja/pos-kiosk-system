@@ -14,6 +14,7 @@ export interface KioskState {
   paymentError: string;
   completedTransaction: CompletedTransaction | null;
   receiptHandoffRequested: boolean;
+  resetTransaction: () => void;
   requestReceipt: () => void;
   backToSuccess: () => void;
   backToMethods: () => void;
@@ -46,6 +47,8 @@ export function getItemCount(items: readonly CartItem[]): number {
 }
 
 export function createKioskStore() {
+  // Private to this kiosk. Reset invalidates both successful and failed old callbacks.
+  let transactionGeneration = 0;
   return createStore<KioskState>()((set, get) => ({
     screen: "items",
     items: [],
@@ -56,6 +59,14 @@ export function createKioskStore() {
     paymentError: "",
     completedTransaction: null,
     receiptHandoffRequested: false,
+    resetTransaction: () => {
+      transactionGeneration++;
+      set({
+        screen: "items", items: [], feedback: "", selectedMethod: null,
+        paymentHandoffRequested: false, isProcessing: false, paymentError: "",
+        completedTransaction: null, receiptHandoffRequested: false,
+      });
+    },
     requestReceipt: () => {
       const state = get();
       if (state.screen === "success" && state.completedTransaction && !state.isProcessing) {
@@ -112,12 +123,13 @@ export function createKioskStore() {
         paidCentavos = parsed.data.amountPaid;
       }
       // Synchronous store lock precedes the delay, so same-tick taps cannot race.
+      const generation = transactionGeneration;
       set({ isProcessing: true, paymentError: "" });
       const items = Object.freeze(getOrderLines(state.items).map((line) => Object.freeze({ ...line })));
       try {
         await new Promise<void>((resolve) => setTimeout(resolve, state.selectedMethod === "card" ? 1200 : 350));
         // An abandoned/replaced order must never receive this delayed completion.
-        if (!get().isProcessing || get().screen !== "processing" || get().completedTransaction ||
+        if (generation !== transactionGeneration || !get().isProcessing || get().screen !== "processing" || get().completedTransaction ||
             get().items !== state.items || get().selectedMethod !== state.selectedMethod) return false;
         const transaction: CompletedTransaction = Object.freeze({
           reference: `TXN-${crypto.randomUUID()}`,
@@ -131,6 +143,7 @@ export function createKioskStore() {
         set({ completedTransaction: transaction, screen: "success", isProcessing: false });
         return true;
       } catch {
+        if (generation !== transactionGeneration) return false;
         set({ isProcessing: false, paymentError: "Payment could not complete. Please try again." });
         return false;
       }
