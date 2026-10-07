@@ -18,11 +18,21 @@ export interface CartItem {
   readonly quantity: number;
 }
 
-export type KioskScreen = "items" | "summary" | "method";
+export type KioskScreen = "items" | "summary" | "method" | "processing" | "success";
 
 export type PaymentMethod = "cash" | "qr" | "card";
 
 export interface OrderLine extends Product {
   readonly quantity: number;
   readonly subtotalCentavos: number;
+}
+
+export interface CompletedTransaction {
+  readonly reference: string;
+  readonly completedAt: string;
+  readonly items: readonly OrderLine[];
+  readonly totalCentavos: number;
+  readonly method: PaymentMethod;
+  readonly paidCentavos: number;
+  readonly changeCentavos: number;
 }

@@ -1,7 +1,8 @@
 import { createStore } from "zustand/vanilla";
 import { productsById } from "../data/products";
 import { paymentMethods } from "../data/payment-methods";
-import type { CartItem, KioskScreen, OrderLine, PaymentMethod, ProductId } from "../types/kiosk";
+import { createCashPaymentSchema } from "../lib/payment-schema";
+import type { CartItem, CompletedTransaction, KioskScreen, OrderLine, PaymentMethod, ProductId } from "../types/kiosk";
 
 export interface KioskState {
   screen: KioskScreen;
@@ -9,6 +10,11 @@ export interface KioskState {
   feedback: string;
   selectedMethod: PaymentMethod | null;
   paymentHandoffRequested: boolean;
+  isProcessing: boolean;
+  paymentError: string;
+  completedTransaction: CompletedTransaction | null;
+  backToMethods: () => void;
+  submitPayment: (cashAmount?: string) => Promise<boolean>;
   addItem: (productId: ProductId) => void;
   decreaseItem: (productId: ProductId) => void;
   removeItem: (productId: ProductId) => void;
@@ -43,6 +49,9 @@ export function createKioskStore() {
     feedback: "",
     selectedMethod: null,
     paymentHandoffRequested: false,
+    isProcessing: false,
+    paymentError: "",
+    completedTransaction: null,
     reviewOrder: () => {
       if (get().screen === "items" && get().items.length > 0) set({ screen: "summary" });
     },
@@ -62,13 +71,56 @@ export function createKioskStore() {
         set({ selectedMethod: method, paymentHandoffRequested: false });
       }
     },
-    // Step 4 will consume the selected method and current order from this store.
     preparePayment: () => {
       if (get().screen === "method" && get().items.length > 0 && get().selectedMethod !== null) {
-        set({ paymentHandoffRequested: true });
+        set({ screen: "processing", paymentHandoffRequested: true, paymentError: "" });
+      }
+    },
+    backToMethods: () => {
+      if (get().screen === "processing" && !get().isProcessing && !get().completedTransaction) {
+        set({ screen: "method", paymentHandoffRequested: false, paymentError: "" });
+      }
+    },
+    submitPayment: async (cashAmount) => {
+      const state = get();
+      if (state.screen !== "processing" || state.isProcessing || state.completedTransaction ||
+          !state.selectedMethod || state.items.length === 0) return false;
+      const totalCentavos = getTotalCentavos(state.items);
+      let paidCentavos = totalCentavos;
+      if (state.selectedMethod === "cash") {
+        const parsed = createCashPaymentSchema(totalCentavos).safeParse({ amountPaid: cashAmount });
+        if (!parsed.success) {
+          set({ paymentError: parsed.error.issues[0].message });
+          return false;
+        }
+        paidCentavos = parsed.data.amountPaid;
+      }
+      // Synchronous store lock precedes the delay, so same-tick taps cannot race.
+      set({ isProcessing: true, paymentError: "" });
+      const items = Object.freeze(getOrderLines(state.items).map((line) => Object.freeze({ ...line })));
+      try {
+        await new Promise<void>((resolve) => setTimeout(resolve, state.selectedMethod === "card" ? 1200 : 350));
+        // An abandoned/replaced order must never receive this delayed completion.
+        if (!get().isProcessing || get().screen !== "processing" || get().completedTransaction ||
+            get().items !== state.items || get().selectedMethod !== state.selectedMethod) return false;
+        const transaction: CompletedTransaction = Object.freeze({
+          reference: `TXN-${crypto.randomUUID()}`,
+          completedAt: new Date().toISOString(),
+          items,
+          totalCentavos,
+          method: state.selectedMethod,
+          paidCentavos,
+          changeCentavos: paidCentavos - totalCentavos,
+        });
+        set({ completedTransaction: transaction, screen: "success", isProcessing: false });
+        return true;
+      } catch {
+        set({ isProcessing: false, paymentError: "Payment could not complete. Please try again." });
+        return false;
       }
     },
     setQuantity: (productId, quantity) => {
+      if (get().isProcessing || get().completedTransaction || get().screen === "processing") return;
       const product = productsById[productId];
       if (!product || !Number.isSafeInteger(quantity) || quantity < 0) {
         set({ feedback: "Please use a whole, nonnegative quantity." });
