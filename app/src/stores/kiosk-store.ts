@@ -15,6 +15,7 @@ export interface KioskState {
   completedTransaction: CompletedTransaction | null;
   receiptHandoffRequested: boolean;
   requestReceipt: () => void;
+  backToSuccess: () => void;
   backToMethods: () => void;
   submitPayment: (cashAmount?: string) => Promise<boolean>;
   addItem: (productId: ProductId) => void;
@@ -57,8 +58,14 @@ export function createKioskStore() {
     receiptHandoffRequested: false,
     requestReceipt: () => {
       const state = get();
-      if (state.screen === "success" && state.completedTransaction && !state.isProcessing && !state.receiptHandoffRequested) {
-        set({ receiptHandoffRequested: true });
+      if (state.screen === "success" && state.completedTransaction && !state.isProcessing) {
+        set({ screen: "receipt", receiptHandoffRequested: true });
+      }
+    },
+    backToSuccess: () => {
+      const state = get();
+      if (state.screen === "receipt" && state.completedTransaction && !state.isProcessing) {
+        set({ screen: "success" });
       }
     },
     reviewOrder: () => {

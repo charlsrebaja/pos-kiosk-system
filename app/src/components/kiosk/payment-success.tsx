@@ -5,17 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPaymentMethodLabel } from "@/data/payment-methods";
 import { formatMoney } from "@/lib/money";
+import { formatCompletionTime } from "@/lib/transaction-time";
 import { useKioskStore } from "./kiosk-provider";
-
-const completionFormatter = new Intl.DateTimeFormat("en-PH", {
-  dateStyle: "medium", timeStyle: "short",
-});
 
 export function PaymentSuccess() {
   const transaction = useKioskStore((state) => state.completedTransaction);
   const screen = useKioskStore((state) => state.screen);
   const busy = useKioskStore((state) => state.isProcessing);
-  const handoffRequested = useKioskStore((state) => state.receiptHandoffRequested);
   const requestReceipt = useKioskStore((state) => state.requestReceipt);
 
   // The payment event is the sole entry into success; also guard the display.
@@ -56,7 +52,7 @@ export function PaymentSuccess() {
             </div>
             <div>
               <dt className="text-muted-foreground">Completed at</dt>
-              <dd className="mt-2 font-medium"><time dateTime={transaction.completedAt}>{completionFormatter.format(new Date(transaction.completedAt))}</time></dd>
+              <dd className="mt-2 font-medium"><time dateTime={transaction.completedAt}>{formatCompletionTime(transaction.completedAt)}</time><span className="ml-2 text-sm text-muted-foreground">Asia/Manila</span></dd>
             </div>
           </dl>
         </CardContent>
@@ -65,9 +61,6 @@ export function PaymentSuccess() {
       <Button onClick={requestReceipt} className="min-h-16 w-full rounded-xl text-lg font-semibold">
         <Receipt aria-hidden="true" className="mr-2 size-5" />View Receipt
       </Button>
-      <div role="status" aria-live="polite" aria-atomic="true" className="mt-4 min-h-6 text-sm leading-6 text-muted-foreground">
-        {handoffRequested && <p className="rounded-xl border border-border bg-white p-4">Your receipt is ready for the next step. Receipt viewing will be available in Step 6.</p>}
-      </div>
     </section>
   );
 }
