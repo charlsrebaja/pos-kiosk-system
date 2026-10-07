@@ -18,7 +18,7 @@ export interface CartItem {
   readonly quantity: number;
 }
 
-export type KioskScreen = "items" | "summary" | "method" | "processing" | "success";
+export type KioskScreen = "items" | "summary" | "method" | "processing" | "success" | "receipt";
 
 export type PaymentMethod = "cash" | "qr" | "card";
 

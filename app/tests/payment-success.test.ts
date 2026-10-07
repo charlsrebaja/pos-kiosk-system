@@ -14,7 +14,7 @@ function checkout(method: PaymentMethod) {
 }
 
 for (const method of ["cash", "qr", "card"] as const) {
-  test(`${method} confirmation and repeated receipt handoffs retain the same completed snapshot`, async () => {
+  test(`${method} confirmation and repeated receipt requests retain the same completed snapshot`, async () => {
     const store = checkout(method);
     const pending = store.getState().submitPayment(method === "cash" ? "200" : undefined);
     store.getState().requestReceipt();
@@ -32,7 +32,7 @@ for (const method of ["cash", "qr", "card"] as const) {
     store.subscribe(() => updates++);
     for (let i = 0; i < 20; i++) store.getState().requestReceipt();
     assert.equal(store.getState().receiptHandoffRequested, true);
-    assert.equal(store.getState().screen, "success");
+    assert.equal(store.getState().screen, "receipt");
     assert.equal(updates, 1);
     assert.strictEqual(store.getState().completedTransaction, transaction);
     assert.equal(JSON.stringify(transaction), before);
