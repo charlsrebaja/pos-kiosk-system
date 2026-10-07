@@ -16,7 +16,6 @@ export function PaymentMethodSelection() {
   const selectPaymentMethod = useKioskStore((state) => state.selectPaymentMethod);
   const backToSummary = useKioskStore((state) => state.backToSummary);
   const preparePayment = useKioskStore((state) => state.preparePayment);
-  const handoffRequested = useKioskStore((state) => state.paymentHandoffRequested);
 
   return (
     <section aria-labelledby="payment-heading" className="mx-auto max-w-3xl">
@@ -57,9 +56,6 @@ export function PaymentMethodSelection() {
 
       <div role="status" aria-live="polite" aria-atomic="true" className="mt-5 min-h-12 text-sm leading-6">
         <p className="font-medium text-primary">{selectedMethod ? `Selected: ${getPaymentMethodLabel(selectedMethod)}` : "Select a payment method to continue."}</p>
-        {handoffRequested && selectedMethod && (
-          <p className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-4">Your {getPaymentMethodLabel(selectedMethod)} choice is ready. Payment processing will be available in Step 4. No payment has been taken.</p>
-        )}
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">

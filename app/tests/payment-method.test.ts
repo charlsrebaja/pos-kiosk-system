@@ -28,7 +28,8 @@ for (const { id, label } of paymentMethods) {
     store.getState().preparePayment();
     store.getState().preparePayment();
     assert.equal(store.getState().paymentHandoffRequested, true);
-    assert.equal(store.getState().screen, "method");
+    assert.equal(store.getState().screen, "processing");
+    assert.equal(store.getState().completedTransaction, null);
     assert.strictEqual(store.getState().items, items);
   });
 }
@@ -75,16 +76,19 @@ test("changing the method, going Back, or editing an order clears the previous h
   const store = paymentOrder();
   store.getState().selectPaymentMethod("cash");
   store.getState().preparePayment();
+  store.getState().backToMethods();
   store.getState().selectPaymentMethod("card");
   assert.equal(store.getState().selectedMethod, "card");
   assert.equal(store.getState().paymentHandoffRequested, false);
   store.getState().preparePayment();
+  store.getState().backToMethods();
   store.getState().backToSummary();
   assert.equal(store.getState().paymentHandoffRequested, false);
   store.getState().preparePayment();
   assert.equal(store.getState().paymentHandoffRequested, false);
   store.getState().continueToPayment();
   store.getState().preparePayment();
+  store.getState().backToMethods();
   store.getState().decreaseItem("coffee");
   assert.equal(store.getState().paymentHandoffRequested, false);
 });
@@ -93,6 +97,7 @@ test("emptying an order clears the method and requires a new choice for the next
   const store = paymentOrder();
   store.getState().selectPaymentMethod("card");
   store.getState().preparePayment();
+  store.getState().backToMethods();
   for (const item of [...store.getState().items]) store.getState().removeItem(item.productId);
   assert.equal(store.getState().screen, "items");
   assert.equal(store.getState().selectedMethod, null);

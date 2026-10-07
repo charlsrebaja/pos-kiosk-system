@@ -1,6 +1,6 @@
 # Campus Corner POS Kiosk
 
-IT415 practical exam, Steps 1–3: Item Selection, Order/Payment Summary, and Payment Method. Built with Next.js App Router, strict TypeScript, Tailwind CSS, generated shadcn/ui Button/Card components, Zustand, and Lucide icons. React Hook Form, Zod, and the Zod resolver are installed for the later payment phase; these phases need no payment form.
+IT415 practical exam, Steps 1–4: Item Selection, Order/Payment Summary, Payment Method, and simulated Payment Processing. Built with Next.js App Router, strict TypeScript, Tailwind CSS, generated shadcn/ui Button/Card components, Zustand, and Lucide icons. Cash entry uses React Hook Form, Zod, and zodResolver.
 
 ## Run locally
 
@@ -29,21 +29,27 @@ npm.cmd run test
 npm.cmd run build
 ```
 
-The type-check script generates Next.js route definitions first so it also works in a fresh clone. Development and production builds use Next.js’s supported Webpack option and Tailwind’s PostCSS integration because the Turbopack worker could not bind its port on this machine. See the Step 2 results for the original failures and successful final build. The nine store/calculation tests cover the sample order, plus/minus, removal at quantity one, invalid quantities, rapid actions, separate store instances, and peso formatting. Five additional navigation tests cover empty-cart guards, preserving the cart on Back, edited summaries, the ordered payment handoff, and returning to items if the cart becomes empty. Eight payment-method tests cover all three choices, selection/handoff guards, Back and changed totals, clearing stale handoffs, empty-order cleanup, and store isolation. Actual current results are in [Step 3 results](docs/step-3-results.md); the Step 1 and Step 2 result files remain historical evidence.
+The type-check script generates Next.js route definitions first so it also works in a fresh clone. Development and production builds use Webpack and Tailwind PostCSS; see the Step 2 results for the original environment issues. The 47 tests cover cart/calculations, navigation, method selection, cash rejection/parsing/change, QR/card completion, duplicate locks, frozen snapshots, and unique references. Actual current results are in [Step 4 results](docs/step-4-results.md); earlier phase files remain historical evidence.
 
 ## Implemented behavior
 
 Six large product cards show Coffee PHP45, Sandwich PHP50, Soft Drink PHP35, Cookies PHP25, Bottled Water PHP20, and Chocolate PHP25. Clicking or keyboard-activating a card adds one unit. Cart rows show the item name, unit price, quantity, and subtotal. Plus adds one; minus removes the row at one; Remove deletes the entire row. Feedback is announced through a live status area.
 
-Continue is disabled for an empty cart. With items, it opens Order/Payment Summary, showing each name, quantity, unit price, subtotal, and total. Back to items preserves the order; quantity/removal edits appear when the summary reopens. Continue to Payment opens Cash, QR Payment, and Credit/Debit Card choices beside the current order total. A selected button has a checkmark, border highlight, and pressed state. Back to Order Summary retains the cart and choice. Continue stays disabled until a choice is selected; it then shows an inline Step 4 handoff message. No payment processing, successful transaction, reference, or receipt is created.
+Continue is disabled for an empty cart. With items, it opens Order/Payment Summary, showing each name, quantity, unit price, subtotal, and total. Back to items preserves the order; edits appear when the summary reopens. Continue to Payment opens Cash, QR Payment, and Credit/Debit Card choices beside the current total. Continue stays disabled until a choice is selected, then opens payment processing. Back to Payment Methods is available before submitting.
+
+Cash shows a labeled amount-paid input and Pay Now. Invalid input stays on payment with an inline error. QR displays a labeled demo placeholder and Confirm Payment. Card shows tap/insert/swipe instructions, Process Payment, and a visible processing state. All methods are simulations; no real card details or gateway are used. Submissions and order edits are locked during processing. A valid payment creates one immutable transaction and a minimal Step 5 handoff. The final success screen, receipt, and New Transaction control remain for Steps 5–7.
 
 ## State and calculations
 
 `src/data/products.ts` contains the typed, fixed product catalog. `src/types/kiosk.ts` defines products, cart items, and derived order lines. Each `KioskProvider` creates one Zustand store for its mounted kiosk. The store keeps product IDs and positive whole quantities, preventing duplicate rows and invalid quantities. It rejects totals exceeding safe integer precision.
 
-Prices are integer centavos: Coffee is 4500. Subtotal is unit price in centavos times quantity, and total is the sum of subtotals. `formatMoney` divides only when formatting the result in PHP with two decimals. Totals are derived rather than stored separately, so they update immediately when the cart changes. Both screens use `getOrderLines`, `getItemCount`, `getTotalCentavos`, and `formatMoney`. The provider stays mounted across `items -> summary -> method` screen changes. Guarded store actions require a nonempty cart and the correct preceding screen; no copied order or confirmed payment snapshot exists in these phases. `selectedMethod` is `cash | qr | card | null`; `paymentHandoffRequested` only records a guarded handoff request while the screen remains `method`. Changing a choice, going Back, or editing the order clears that request. Emptying the cart also clears the selected method. Refresh starts a new session with no choice.
+Prices are integer centavos: Coffee is 4500. Subtotal is unit price times quantity; total sums subtotals. `formatMoney` divides only for display. The provider stays mounted across `items -> summary -> method -> processing -> success`. Totals derive from the active cart until payment is submitted. The store then locks that order and stores its completed snapshot.
 
-There is no database or persistent active cart. Refreshing the browser starts an empty session. Product data is appropriate as local typed data for this exam phase. Inventory, payment processing, authentication, receipts, and reset are outside Steps 1–3.
+`createCashPaymentSchema(totalCentavos)` validates decimal text with at most two places, parses it with BigInt, rejects amounts outside safe integer centavos, and compares it with the actual total. The store revalidates cash independently of the form. Blank, malformed, negative, nonfinite, excessive-precision, and insufficient amounts never complete. PHP175 paid with PHP200 gives PHP25 change; exact PHP175 gives zero. QR/card paid amount equals total and change is zero.
+
+The payment event synchronously acquires a store lock before the simulation delay. Completion generates `TXN-` plus `crypto.randomUUID()` and an ISO completion timestamp once. `completedTransaction` contains copied and frozen order lines, total, method, paid amount, and change; the object, item array, and every line are frozen. Repeated submissions cannot replace it. Rendering creates no references. Future success/receipt screens must read this snapshot.
+
+There is no database or persistence. Refresh starts an empty session and clears completed transaction data. Inventory, authentication, receipts, and reset controls are outside Step 4.
 
 ## Source organization
 
@@ -51,13 +57,13 @@ There is no database or persistent active cart. Refreshing the browser starts an
 - `src/components/kiosk`: kiosk provider, product cards, current cart, and screen composition.
 - `src/components/ui`: official CLI-generated shadcn/ui components.
 - `src/data`, `src/types`, `src/stores`, `src/lib`: product data, types, cart actions, and shared currency formatting.
-- `tests/cart.test.ts`, `tests/navigation.test.ts`, `tests/payment-method.test.ts`: behavioral cart/calculation and screen-transition tests.
-- `docs/ai/phase-01.md`, `docs/ai/phase-02.md`, `docs/ai/phase-03.md`: actual prompts and assistant evaluation; student evaluation remains pending.
+- `tests`: cart/calculation, navigation, method selection, and payment processing regression tests.
+- `docs/ai/phase-01.md` through `phase-04.md`: prompts and assistant evaluation; student evaluation remains pending.
 - `docs/evidence`: real desktop/mobile screenshots.
 
-## Step 3 review, commit, and pull request
+## Step 4 review, commit, and pull request
 
-The current branch is `feature/payment-method`. No Step 3 commit or push has been made. Review [changed files and checks](docs/step-3-results.md), [the AI record](docs/ai/phase-03.md), and [commit/PR instructions](docs/step-3-review.md). A PR body is prepared in [docs/step-3-pr.md](docs/step-3-pr.md). Step 2 documents remain historical records of that phase. Obtain a real teammate review before merging; stop after Step 3.
+The current branch is `feature/payment-processing`. Step 4 changes are uncommitted for review. Review [actual checks](docs/step-4-results.md), [the AI record](docs/ai/phase-04.md), and [commit/PR instructions](docs/step-4-review.md). Use [the PR draft](docs/step-4-pr.md). Earlier phase documents are historical evidence. Obtain a real teammate review before merging; stop after Step 4.
 
 ## Historical Step 1 setup instructions
 
@@ -98,7 +104,7 @@ gh pr create --base main --head feature/step-1-item-selection --title 'Step 1 It
 
 ## Vercel readiness
 
-The app is a standard Next.js project and builds successfully. When later authorized to deploy, import the shared repository into Vercel with framework Next.js and production branch `main`. This README does not claim a deployment exists. Only deploy phases actually completed and reviewed; payment selection is implemented; processing is not yet implemented. In this checkout, set Vercel’s Root Directory to `app`, where `package.json` lives; for a repository containing the app files at its root, leave Root Directory at the repository root.
+The app is a standard Next.js project and builds successfully. When later authorized to deploy, import the shared repository into Vercel with framework Next.js and production branch `main`. No deployment is claimed here. Only deploy completed and reviewed phases. In this checkout, set Vercel’s Root Directory to `app`; for a repository containing the app files at its root, leave Root Directory at the repository root.
 
 ## Dependency audit
 
@@ -106,4 +112,4 @@ The installation audit reported nine high-severity affected dependency entries, 
 
 ## Contributions
 
-Actual student names, GitHub accounts, human evaluation, commits, PRs, reviews, and merge evidence remain to be recorded by the group. Steps 1–3 have separate assistant records in `docs/ai`. Step 3 was implemented and checked in the current conversation; actual human evaluation and review are pending. Refer to the outer workspace's contribution template and phase guide for the complete workflow.
+Actual student names, GitHub accounts, human evaluation, commits, PRs, reviews, and merge evidence remain to be recorded by the group. Steps 1–4 have separate assistant records in `docs/ai`. Step 4 was implemented and checked in the current conversation; its human evaluation and review are pending. Refer to the outer workspace's contribution template and phase guide for the complete workflow.

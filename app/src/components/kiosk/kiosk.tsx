@@ -7,6 +7,7 @@ import { CartPanel } from "./cart-panel";
 import { ProductCard } from "./product-card";
 import { OrderSummary } from "./order-summary";
 import { PaymentMethodSelection } from "./payment-method";
+import { PaymentProcessing, PaymentCompletionHandoff } from "./payment-processing";
 import { KioskProvider, useKioskStore } from "./kiosk-provider";
 
 function KioskScreens() {
@@ -17,7 +18,9 @@ function KioskScreens() {
     ? { number: "01", label: "Item selection" }
     : screen === "summary"
       ? { number: "02", label: "Order / Payment Summary" }
-      : { number: "03", label: "Payment method" };
+      : screen === "method"
+        ? { number: "03", label: "Payment method" }
+        : { number: "04", label: "Payment processing" };
 
   useEffect(() => {
     if (previousScreen.current !== screen) {
@@ -49,6 +52,8 @@ function KioskScreens() {
         {screen === "items" && <ItemSelection />}
         {screen === "summary" && <OrderSummary />}
         {screen === "method" && <PaymentMethodSelection />}
+        {screen === "processing" && <PaymentProcessing />}
+        {screen === "success" && <PaymentCompletionHandoff />}
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
           <p className="flex items-center gap-1.5"><Leaf aria-hidden="true" className="h-3.5 w-3.5 text-primary" />Small bites. Big campus energy.</p>
           <p>Campus Corner · {step.label}</p>
