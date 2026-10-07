@@ -49,24 +49,24 @@
 }
 
 :root {
-  --background: #f7f8f3;
-  --foreground: #20332c;
+  --background: #eff6ff;
+  --foreground: #0f172a;
   --card: oklch(1 0 0);
-  --card-foreground: #20332c;
+  --card-foreground: #0f172a;
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #28634b;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #f0f3eb;
-  --secondary-foreground: #20332c;
-  --muted: #f0f3eb;
-  --muted-foreground: #66736b;
-  --accent: #e8efe5;
-  --accent-foreground: #20332c;
+  --secondary: #eff6ff;
+  --secondary-foreground: #1e40af;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #dbeafe;
+  --accent-foreground: #1e40af;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #e2e7dc;
-  --input: #e2e7dc;
-  --ring: #28634b;
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --ring: #2563eb;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -133,5 +133,75 @@
   }
   html {
     @apply font-sans;
+    scroll-padding-top: 80px;
+  }
+}
+
+.kiosk-shell {
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 520px);
+}
+
+.kiosk-shell [data-slot="card"] {
+  box-shadow: 0 8px 30px -16px rgb(15 23 42 / 18%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@page {
+  margin: 12mm;
+}
+
+@media print {
+  :root {
+    --foreground: #000;
+    --muted-foreground: #000;
+    --primary: #000;
+    --border: #bbb;
+    --card-foreground: #000;
+  }
+  html, body, .kiosk-shell {
+    background: #fff !important;
+    color: #000 !important;
+    min-height: 0 !important;
+  }
+  .print-hidden, .kiosk-shell > header,
+  .kiosk-shell main > :not(.receipt-view) {
+    display: none !important;
+  }
+  .kiosk-shell main, .receipt-view, .receipt-layout {
+    display: block !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .receipt-paper {
+    max-width: 640px;
+    margin: 0 auto;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    overflow: visible !important;
+    font-size: 12px;
+  }
+  .receipt-paper [data-slot="card-content"] {
+    padding: 0 !important;
+  }
+  .receipt-paper * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  .receipt-paper li, .receipt-paper dl > div {
+    break-inside: avoid;
+  }
+  .receipt-paper h2, .receipt-paper h3 {
+    break-after: avoid;
   }
 }

@@ -20,7 +20,7 @@ export function PaymentSuccess() {
   return (
     <section aria-labelledby="success-heading" className="mx-auto max-w-2xl">
       <div className="text-center">
-        <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-emerald-600">
           <CircleCheck aria-hidden="true" className="size-11" />
         </div>
         <h1 id="success-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">Payment successful!</h1>

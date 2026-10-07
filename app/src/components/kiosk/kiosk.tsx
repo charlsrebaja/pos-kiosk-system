@@ -37,23 +37,23 @@ function KioskScreens() {
   }, [screen]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white"><GraduationCap aria-hidden="true" className="h-6 w-6" /></div>
-            <div><p className="text-xs font-semibold uppercase tracking-[0.19em] text-primary">Campus</p><p className="text-xl font-bold leading-6 tracking-tight">Corner<span className="text-primary">.</span></p></div>
+    <div className="kiosk-shell min-h-screen text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-white/95 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-8">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm shadow-blue-600/20"><GraduationCap aria-hidden="true" className="size-5" /></div>
+            <div><p className="text-base font-bold leading-5 tracking-tight">Campus<span className="text-primary"> Corner.</span></p><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Your campus. Your corner.</p></div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs font-medium text-muted-foreground sm:px-4 sm:text-sm">
-            <span className="h-2 w-2 rounded-full bg-primary" />Self-service kiosk
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-[10px] font-semibold text-blue-700 sm:px-3 sm:text-xs">
+            <span className="size-1.5 rounded-full bg-primary" /><span className="hidden min-[360px]:inline">Self-service </span>kiosk
           </div>
         </div>
       </header>
 
-      <main ref={mainRef} tabIndex={-1} aria-label={step.label} className="mx-auto max-w-7xl outline-none px-5 pb-8 pt-8 sm:px-8 sm:pt-10">
-        <div className="mb-8 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[11px] text-white">{step.number}</span>
-          {step.label} <span className="ml-1 h-px w-12 bg-border" />
+      <main ref={mainRef} tabIndex={-1} aria-label={step.label} className="mx-auto max-w-7xl scroll-mt-20 outline-none px-4 pb-8 pt-6 sm:px-8 sm:pt-8">
+        <div className="mb-7 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <span className="flex size-8 items-center justify-center rounded-lg border border-blue-100 bg-white text-xs font-bold text-primary shadow-sm">{step.number}</span>
+          {step.label} <span className="ml-1 h-px flex-1 bg-border" />
         </div>
         {screen === "items" && <ItemSelection />}
         {screen === "summary" && <OrderSummary />}
@@ -74,11 +74,11 @@ function ItemSelection() {
   const feedback = useKioskStore((state) => state.feedback);
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_370px] xl:gap-10">
+    <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_350px] xl:gap-9">
       <section aria-labelledby="menu-heading">
         <div className="mb-7">
-          <p className="mb-2 text-sm font-medium text-primary">A little fuel for your day</p>
-          <h1 id="menu-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">What sounds good?</h1>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">Fresh picks. Campus favorites.</p>
+          <h1 id="menu-heading" className="text-3xl font-bold tracking-tight sm:text-[40px] sm:leading-tight">What sounds good?</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Tap to add your favorites. We’ll take care of the totals.</p>
         </div>
         <div className="mb-5 flex items-center justify-between gap-3 border-b border-border pb-3">
@@ -88,7 +88,7 @@ function ItemSelection() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
           {products.map((product) => <ProductCard key={product.id} product={product} />)}
         </div>
-        <div role="status" aria-live="polite" aria-atomic="true" className="mt-5 flex min-h-12 items-center gap-2 text-sm font-medium text-primary">
+        <div role="status" aria-live="polite" aria-atomic="true" className="mt-5 flex min-h-12 items-center gap-2 text-sm font-medium text-emerald-700">
           {feedback && <><Check aria-hidden="true" className="h-4 w-4 shrink-0" /><span>{feedback}</span></>}
         </div>
       </section>
