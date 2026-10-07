@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,13 @@ export function PaymentProcessing() {
   });
   // Covers async resolver work before the store's synchronous processing lock.
   const submitting = useRef(false);
+  const mounted = useRef(true);
+  // Conditional screen rendering discards RHF values/errors and this local lock.
+  // A resolver that finishes after unmount must not submit into the next order.
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const locked = busy || form.formState.isSubmitting;
   const error = form.formState.errors.amountPaid?.message || paymentError;
 
@@ -45,6 +52,7 @@ export function PaymentProcessing() {
           if (submitting.current) return;
           submitting.current = true;
           void form.handleSubmit(async () => {
+            if (!mounted.current) return;
             // Store revalidates the raw string against the confirmed current total.
             await submitPayment(form.getValues("amountPaid"));
           })(event).finally(() => { submitting.current = false; });

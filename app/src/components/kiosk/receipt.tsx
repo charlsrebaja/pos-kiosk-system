@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ArrowLeft, ArrowRight, CircleCheck, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +13,7 @@ export function ReceiptView() {
   const screen = useKioskStore((state) => state.screen);
   const busy = useKioskStore((state) => state.isProcessing);
   const back = useKioskStore((state) => state.backToSuccess);
-  const [newTransactionRequested, setNewTransactionRequested] = useState(false);
+  const reset = useKioskStore((state) => state.resetTransaction);
 
   if (screen !== "receipt" || busy || !transaction) return null;
 
@@ -100,13 +99,9 @@ export function ReceiptView() {
         <Button variant="outline" onClick={back} className="min-h-14 flex-1 rounded-xl text-base">
           <ArrowLeft aria-hidden="true" className="mr-2 size-4" />Back to confirmation
         </Button>
-        <Button onClick={() => setNewTransactionRequested(true)} className="min-h-14 flex-1 rounded-xl text-base font-semibold">
+        <Button onClick={reset} className="min-h-14 flex-1 rounded-xl text-base font-semibold">
           New Transaction<ArrowRight aria-hidden="true" className="ml-2 size-4" />
         </Button>
-      </div>
-      <p className="mt-3 text-center text-xs text-muted-foreground">New Transaction reset will be available in Step 7.</p>
-      <div role="status" aria-live="polite" aria-atomic="true" className="mt-3 min-h-6">
-        {newTransactionRequested && <p className="rounded-xl border border-border bg-white p-4 text-sm leading-6 text-muted-foreground">New Transaction will start a fresh order in Step 7. Your completed receipt stays available here for now.</p>}
       </div>
     </section>
   );

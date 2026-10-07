@@ -1,6 +1,6 @@
 # Campus Corner POS Kiosk
 
-IT415 practical exam, Steps 1–6: Item Selection, Order/Payment Summary, Payment Method, simulated Payment Processing, Payment Successful confirmation, and digital Receipt. Built with Next.js App Router, strict TypeScript, Tailwind CSS, generated shadcn/ui Button/Card components, Zustand, and Lucide icons. Cash entry uses React Hook Form, Zod, and zodResolver.
+IT415 practical exam, Steps 1–7: Item Selection, Order/Payment Summary, Payment Method, simulated Payment Processing, Payment Successful confirmation, digital Receipt, and New Transaction reset. Built with Next.js App Router, strict TypeScript, Tailwind CSS, generated shadcn/ui Button/Card components, Zustand, and Lucide icons. Cash entry uses React Hook Form, Zod, and zodResolver.
 
 ## Run locally
 
@@ -29,7 +29,7 @@ npm.cmd run test
 npm.cmd run build
 ```
 
-The type-check script generates Next.js route definitions first so it also works in a fresh clone. Development and production builds use Webpack and Tailwind PostCSS; see the Step 2 results for the original environment issues. The 56 tests cover cart/calculations, navigation, method selection, cash validation/change, QR/card completion, duplicate locks, frozen snapshots, guarded receipt access, reopening, and Manila date formatting. Actual current results and browser evidence are in [Step 6 results](docs/step-6-results.md); earlier phase files remain historical evidence.
+The type-check script generates Next.js route definitions first so it also works in a fresh clone. Development and production builds use Webpack and Tailwind PostCSS; see the Step 2 results for the original environment issues. The 63 tests cover cart/calculations, navigation, method selection, cash validation/change, QR/card completion, duplicate locks, frozen snapshots, guarded receipt access, reopening, Manila date formatting, reset, consecutive transactions, and obsolete payment callbacks. Actual current results and browser evidence are in [Step 7 results](docs/step-7-results.md); earlier phase files remain historical evidence.
 
 ## Implemented behavior
 
@@ -39,19 +39,23 @@ Continue is disabled for an empty cart. With items, it opens Order/Payment Summa
 
 Cash shows a labeled amount-paid input and Pay Now. Invalid input stays on payment with an inline error. QR displays a labeled demo placeholder and Confirm Payment. Card shows tap/insert/swipe instructions, Process Payment, and a visible processing state. All methods are simulations; no real card details or gateway are used. Submissions and order edits are locked during processing. A valid payment creates one immutable transaction and opens Payment Successful.
 
-Confirmation shows the snapshot's transaction amount, paid amount, change, method, reference, and completion time. View Receipt opens the completed digital receipt with each purchased item's name, quantity, unit price, and subtotal, plus total, method, paid amount, change, original reference, and completion date/time. Back to confirmation and reopening preserve every completed field. Both screens display the completion time in Asia/Manila. New Transaction shows an explicit Step 7 handoff message; reset is not implemented in Step 6.
+Confirmation shows the snapshot's transaction amount, paid amount, change, method, reference, and completion time. View Receipt opens the completed digital receipt with each purchased item's name, quantity, unit price, and subtotal, plus total, method, paid amount, change, original reference, and completion date/time. Back to confirmation and reopening preserve every completed field. Both screens display the completion time in Asia/Manila. New Transaction clears the active order and completed payment and returns to Items with an empty cart, PHP0 total, and disabled Continue. The next customer chooses a payment method again and receives a new reference on completion.
 
 ## State and calculations
 
 `src/data/products.ts` contains the typed, fixed product catalog. `src/types/kiosk.ts` defines products, cart items, and derived order lines. Each `KioskProvider` creates one Zustand store for its mounted kiosk. The store keeps product IDs and positive whole quantities, preventing duplicate rows and invalid quantities. It rejects totals exceeding safe integer precision.
 
-Prices are integer centavos: Coffee is 4500. Subtotal is unit price times quantity; total sums subtotals. `formatMoney` divides only for display. The provider stays mounted across `items -> summary -> method -> processing -> success -> receipt`. Totals derive from the active cart until payment is submitted. The store then locks that order and stores its completed snapshot.
+Prices are integer centavos: Coffee is 4500. Subtotal is unit price times quantity; total sums subtotals. `formatMoney` divides only for display. The provider stays mounted across `items -> summary -> method -> processing -> success -> receipt -> items`. Totals derive from the active cart until payment is submitted. The store then locks that order and stores its completed snapshot.
 
 `createCashPaymentSchema(totalCentavos)` validates decimal text with at most two places, parses it with BigInt, rejects amounts outside safe integer centavos, and compares it with the actual total. The store revalidates cash independently of the form. Blank, malformed, negative, nonfinite, excessive-precision, and insufficient amounts never complete. PHP175 paid with PHP200 gives PHP25 change; exact PHP175 gives zero. QR/card paid amount equals total and change is zero.
 
 The payment event synchronously acquires a store lock before the simulation delay. Completion generates `TXN-` plus `crypto.randomUUID()` and an ISO completion timestamp once. `completedTransaction` contains copied and frozen order lines, total, method, paid amount, and change; the object, item array, and every line are frozen. Repeated submissions cannot replace it. Confirmation and Receipt read only this snapshot and create no references/timestamps. `requestReceipt` requires screen `success`, a completed snapshot, and no pending processing before switching to `receipt`. `backToSuccess` uses equivalent guards for returning. The receipt component also refuses to display without its completed snapshot. Shared `formatCompletionTime` uses `Intl.DateTimeFormat` with explicit `timeZone: "Asia/Manila"`; both time elements retain the original ISO value. Opening a receipt cannot change its reference or completion time.
 
-There is no database or persistence. Refresh starts an empty session and clears completed transaction data. Inventory, authentication, receipt history, and physical printing are outside this phase. A working New Transaction reset remains Step 7.
+`resetTransaction` atomically returns all active state to its initial values: items, method, feedback, payment/receipt flags, errors, busy state, completed snapshot, and screen. Total derives from the now-empty cart; paid amount, change, confirmed purchased lines, reference, and timestamp disappear with the cleared snapshot. Product data stays in the unchanged local catalog. Every reset advances a private store generation; both delayed completion and error callbacks check it before changing state, so an obsolete payment cannot restore old details or unlock a newer payment. The internal reset action can also safely invalidate pending work; its user-facing control appears on Receipt.
+
+Conditional screen rendering unmounts the old payment form. React Hook Form values/errors/submitting state and component refs are discarded; the next payment screen creates a new form with an empty amount. A mounted-instance guard prevents an old async form resolver from submitting after its screen unmounts. Receipt's former local placeholder state has been removed. No browser reload is used by New Transaction.
+
+There is no database or persistence. Refresh also starts an empty session and clears completed transaction data. Inventory, authentication, receipt history, and physical printing are outside this phase.
 
 ## Source organization
 
@@ -59,13 +63,13 @@ There is no database or persistence. Refresh starts an empty session and clears 
 - `src/components/kiosk`: kiosk provider, product cards, current cart, and screen composition.
 - `src/components/ui`: official CLI-generated shadcn/ui components.
 - `src/data`, `src/types`, `src/stores`, `src/lib`: product data, types, cart/transaction actions, shared currency formatting, and Manila completion-time formatting.
-- `tests`: cart/calculation, navigation, method selection, payment processing, success, receipt guards/snapshot stability, and timezone regression tests.
-- `docs/ai/phase-01.md` through `phase-06.md`: prompts and assistant evaluation; student evaluation remains pending.
+- `tests`: cart/calculation, navigation, method selection, payment processing, success, receipt guards/snapshot stability, timezone, reset, and stale callback regression tests.
+- `docs/ai/phase-01.md` through `phase-07.md`: prompts and assistant evaluation; student evaluation remains pending.
 - `docs/evidence`: real desktop/mobile screenshots.
 
-## Step 6 review, commit, and pull request
+## Step 7 review, commit, and pull request
 
-The current branch is `feature/receipt`. Step 6 changes are uncommitted for review. Review [actual checks](docs/step-6-results.md), [the AI record](docs/ai/phase-06.md), and [commit/PR instructions](docs/step-6-review.md). Use [the PR draft](docs/step-6-pr.md). Earlier phase documents are historical evidence. Obtain a real teammate review before merging; stop after Step 6.
+The current branch is `feature/new-transaction`. Step 7 changes are uncommitted for review. Review [actual checks](docs/step-7-results.md), [the AI record](docs/ai/phase-07.md), and [commit/PR instructions](docs/step-7-review.md). Use [the PR draft](docs/step-7-pr.md). Earlier phase documents are historical evidence. Obtain a real teammate review before merging; stop after Step 7.
 
 ## Historical Step 1 setup instructions
 
@@ -114,4 +118,4 @@ The installation audit reported nine high-severity affected dependency entries, 
 
 ## Contributions
 
-Actual student names, GitHub accounts, human evaluation, commits, PRs, reviews, and merge evidence remain to be recorded by the group. Steps 1–6 have separate assistant records in `docs/ai`. Step 6 was implemented and checked in the current conversation; its human evaluation and review are pending. Refer to the outer workspace's contribution template and phase guide for the complete workflow.
+Actual student names, GitHub accounts, human evaluation, commits, PRs, reviews, and merge evidence remain to be recorded by the group. Steps 1–7 have separate assistant records in `docs/ai`. Step 7 was implemented and checked in the current conversation; its human evaluation and review are pending. Refer to the outer workspace's contribution template and phase guide for the complete workflow.
