@@ -41,7 +41,7 @@ export function OrderSummary() {
           </ul>
           <div className="flex items-baseline justify-between gap-3 border-t border-border pt-6">
             <span className="text-base font-medium">Order total</span>
-            <p aria-label="Order total" className="text-3xl font-bold tracking-tight tabular-nums">{formatMoney(getTotalCentavos(items))}</p>
+            <p aria-label="Order total" className="text-3xl font-bold tracking-tight tabular-nums text-primary">{formatMoney(getTotalCentavos(items))}</p>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">All prices in Philippine pesos.</p>
         </CardContent>

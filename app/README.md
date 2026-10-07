@@ -29,7 +29,7 @@ npm.cmd run test
 npm.cmd run build
 ```
 
-The type-check script generates Next.js route definitions first so it also works in a fresh clone. Development and production builds use Webpack and Tailwind PostCSS; see the Step 2 results for the original environment issues. The 63 tests cover cart/calculations, navigation, method selection, cash validation/change, QR/card completion, duplicate locks, frozen snapshots, guarded receipt access, reopening, Manila date formatting, reset, consecutive transactions, and obsolete payment callbacks. Actual current results and browser evidence are in [Step 7 results](docs/step-7-results.md); earlier phase files remain historical evidence.
+The type-check script generates Next.js route definitions first so it also works in a fresh clone. Development and production builds use Webpack and Tailwind PostCSS; see the Step 2 results for the original environment issues. The 63 tests cover cart/calculations, navigation, method selection, cash validation/change, QR/card completion, duplicate locks, frozen snapshots, guarded receipt access, reopening, Manila date formatting, reset, consecutive transactions, and obsolete payment callbacks. Current checks and browser evidence are in [UI enhancement results](docs/ui-enhancement-results.md); earlier phase files remain historical evidence.
 
 ## Implemented behavior
 
@@ -55,7 +55,15 @@ The payment event synchronously acquires a store lock before the simulation dela
 
 Conditional screen rendering unmounts the old payment form. React Hook Form values/errors/submitting state and component refs are discarded; the next payment screen creates a new form with an empty amount. A mounted-instance guard prevents an old async form resolver from submitting after its screen unmounts. Receipt's former local placeholder state has been removed. No browser reload is used by New Transaction.
 
-There is no database or persistence. Refresh also starts an empty session and clears completed transaction data. Inventory, authentication, receipt history, and physical printing are outside this phase.
+There is no database or persistence. Refresh also starts an empty session and clears completed transaction data. Inventory, authentication, and receipt history remain outside scope.
+
+## Interface and receipt printing
+
+The interface uses primary blue `#2563EB`, dark text `#0F172A`, white cards, and a subtle `#EFF6FF` background. The compact sticky header is approximately 64px high. Screen changes focus the main content and return to the top; scroll padding leaves room below the header. Touch controls remain at least 48px high, with focus and active feedback. Successful payments remain green and validation errors remain red.
+
+`src/data/product-images.ts` maps the six supplied JPEGs in `assets/images` to the typed catalog IDs. Next.js Image renders responsive 4:3 containers with optimized static imports and blur placeholders. An image load failure retains the matching product icon. Originals are preserved; the supplied cookies image includes a visible watermark. These assets must be included in the feature commit so a fresh clone can build.
+
+Receipt shows the completed snapshot on the left and transaction information/actions on the right at desktop widths; the panels stack on mobile. Print Receipt calls `window.print()` only on a click. Print CSS hides the header, step navigation, footer, information panel, and buttons; keeps all receipt fields; uses black text on white with 12mm margins; and avoids splitting item rows and field groups. Printing performs no store mutation, reset, or reference generation. Browser print-preview layout still needs a manual check on the target browser/printer; this environment's native print modal cannot be inspected by the browser automation. Turn off the browser's own headers/footers for receipt-only output.
 
 ## Source organization
 
@@ -64,12 +72,12 @@ There is no database or persistence. Refresh also starts an empty session and cl
 - `src/components/ui`: official CLI-generated shadcn/ui components.
 - `src/data`, `src/types`, `src/stores`, `src/lib`: product data, types, cart/transaction actions, shared currency formatting, and Manila completion-time formatting.
 - `tests`: cart/calculation, navigation, method selection, payment processing, success, receipt guards/snapshot stability, timezone, reset, and stale callback regression tests.
-- `docs/ai/phase-01.md` through `phase-07.md`: prompts and assistant evaluation; student evaluation remains pending.
+- `docs/ai/phase-01.md` through `phase-07.md`, and `ui-enhancement.md`: prompts and assistant evaluation; student evaluation remains pending.
 - `docs/evidence`: real desktop/mobile screenshots.
 
-## Step 7 review, commit, and pull request
+## UI enhancement review, commit, and pull request
 
-The current branch is `feature/new-transaction`. Step 7 changes are uncommitted for review. Review [actual checks](docs/step-7-results.md), [the AI record](docs/ai/phase-07.md), and [commit/PR instructions](docs/step-7-review.md). Use [the PR draft](docs/step-7-pr.md). Earlier phase documents are historical evidence. Obtain a real teammate review before merging; stop after Step 7.
+The current branch is `feature/enhance-ui`. UI enhancement changes are uncommitted for review. Review [actual checks](docs/ui-enhancement-results.md), [the AI record](docs/ai/ui-enhancement.md), and [commit/PR instructions](docs/ui-enhancement-review.md). Use [the PR draft](docs/ui-enhancement-pr.md). Steps 1–7 are already merged; their documents remain historical evidence. Obtain a real teammate review before merging. No commit, push, merge, or deployment was performed during this enhancement.
 
 ## Historical Step 1 setup instructions
 
@@ -118,4 +126,4 @@ The installation audit reported nine high-severity affected dependency entries, 
 
 ## Contributions
 
-Actual student names, GitHub accounts, human evaluation, commits, PRs, reviews, and merge evidence remain to be recorded by the group. Steps 1–7 have separate assistant records in `docs/ai`. Step 7 was implemented and checked in the current conversation; its human evaluation and review are pending. Refer to the outer workspace's contribution template and phase guide for the complete workflow.
+Actual student names, GitHub accounts, human evaluation, commits, PRs, reviews, and merge evidence must be recorded by the group. Steps 1–7 and this UI enhancement have separate assistant records in `docs/ai`. Human evaluation and contribution evidence for this enhancement are pending. Refer to the outer workspace's contribution template and phase guide for the complete workflow.

@@ -25,7 +25,7 @@ export function PaymentMethodSelection() {
       <Card className="mt-7 rounded-2xl [--card-spacing:--spacing(6)]">
         <CardContent className="flex items-baseline justify-between gap-3">
           <span className="text-base font-medium">Order total</span>
-          <p aria-label="Order total" className="text-3xl font-bold tracking-tight tabular-nums">{formatMoney(getTotalCentavos(items))}</p>
+          <p aria-label="Order total" className="text-3xl font-bold tracking-tight tabular-nums text-primary">{formatMoney(getTotalCentavos(items))}</p>
         </CardContent>
       </Card>
 

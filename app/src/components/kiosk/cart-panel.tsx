@@ -17,7 +17,7 @@ export function CartPanel() {
   const total = getTotalCentavos(items);
 
   return (
-    <aside aria-labelledby="order-heading" className="overflow-hidden rounded-2xl border border-border bg-white lg:sticky lg:top-7">
+    <aside aria-labelledby="order-heading" className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_8px_30px_-16px_rgba(15,23,42,0.18)] lg:sticky lg:top-20">
       <div className="flex items-center justify-between border-b border-border px-6 py-5">
         <div className="flex items-center gap-3">
           <ShoppingBag aria-hidden="true" className="h-5 w-5 text-primary" />
@@ -28,7 +28,7 @@ export function CartPanel() {
 
       {lines.length === 0 ? (
         <div className="flex min-h-80 flex-col items-center justify-center px-7 py-12 text-center">
-          <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#f1f5ef]">
+          <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-50">
             <ShoppingBag aria-hidden="true" className="h-8 w-8 stroke-[1.4] text-primary/60" />
           </div>
           <h3 className="text-lg font-semibold">A good day starts here</h3>
@@ -67,10 +67,10 @@ export function CartPanel() {
         </ul>
       )}
 
-      <div className="border-t border-border bg-[#fafbf8] px-6 py-6">
+      <div className="border-t border-border bg-slate-50/80 px-6 py-6">
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-base font-medium text-muted-foreground">Order total</span>
-          <p aria-label="Order total" className="text-3xl font-bold tracking-tight tabular-nums">{formatMoney(total)}</p>
+          <p aria-label="Order total" className="text-3xl font-bold tracking-tight tabular-nums text-primary">{formatMoney(total)}</p>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">All prices in Philippine pesos.</p>
         <Button disabled={items.length === 0} onClick={reviewOrder} className="mt-6 min-h-14 w-full rounded-xl text-base font-semibold shadow-none">
