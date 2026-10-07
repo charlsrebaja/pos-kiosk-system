@@ -20,6 +20,8 @@ export interface CartItem {
 
 export type KioskScreen = "items" | "summary" | "method";
 
+export type PaymentMethod = "cash" | "qr" | "card";
+
 export interface OrderLine extends Product {
   readonly quantity: number;
   readonly subtotalCentavos: number;

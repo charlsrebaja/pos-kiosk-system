@@ -1,11 +1,14 @@
 import { createStore } from "zustand/vanilla";
 import { productsById } from "../data/products";
-import type { CartItem, KioskScreen, OrderLine, ProductId } from "../types/kiosk";
+import { paymentMethods } from "../data/payment-methods";
+import type { CartItem, KioskScreen, OrderLine, PaymentMethod, ProductId } from "../types/kiosk";
 
 export interface KioskState {
   screen: KioskScreen;
   items: CartItem[];
   feedback: string;
+  selectedMethod: PaymentMethod | null;
+  paymentHandoffRequested: boolean;
   addItem: (productId: ProductId) => void;
   decreaseItem: (productId: ProductId) => void;
   removeItem: (productId: ProductId) => void;
@@ -14,6 +17,8 @@ export interface KioskState {
   backToItems: () => void;
   continueToPayment: () => void;
   backToSummary: () => void;
+  selectPaymentMethod: (method: PaymentMethod) => void;
+  preparePayment: () => void;
 }
 
 export function getOrderLines(items: readonly CartItem[]): OrderLine[] {
@@ -36,6 +41,8 @@ export function createKioskStore() {
     screen: "items",
     items: [],
     feedback: "",
+    selectedMethod: null,
+    paymentHandoffRequested: false,
     reviewOrder: () => {
       if (get().screen === "items" && get().items.length > 0) set({ screen: "summary" });
     },
@@ -46,7 +53,20 @@ export function createKioskStore() {
       if (get().screen === "summary" && get().items.length > 0) set({ screen: "method" });
     },
     backToSummary: () => {
-      if (get().screen === "method" && get().items.length > 0) set({ screen: "summary" });
+      if (get().screen === "method" && get().items.length > 0) {
+        set({ screen: "summary", paymentHandoffRequested: false });
+      }
+    },
+    selectPaymentMethod: (method) => {
+      if (get().screen === "method" && get().items.length > 0 && paymentMethods.some((option) => option.id === method)) {
+        set({ selectedMethod: method, paymentHandoffRequested: false });
+      }
+    },
+    // Step 4 will consume the selected method and current order from this store.
+    preparePayment: () => {
+      if (get().screen === "method" && get().items.length > 0 && get().selectedMethod !== null) {
+        set({ paymentHandoffRequested: true });
+      }
     },
     setQuantity: (productId, quantity) => {
       const product = productsById[productId];
@@ -75,7 +95,12 @@ export function createKioskStore() {
           ? `${product.name} added. Quantity: ${quantity}.`
           : `${product.name} quantity updated to ${quantity}.`;
 
-      set({ items, feedback, ...(items.length === 0 ? { screen: "items" as const } : {}) });
+      set({
+        items,
+        feedback,
+        paymentHandoffRequested: false,
+        ...(items.length === 0 ? { screen: "items" as const, selectedMethod: null } : {}),
+      });
     },
     addItem: (productId) => {
       const quantity = get().items.find((item) => item.productId === productId)?.quantity ?? 0;
