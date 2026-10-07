@@ -80,12 +80,3 @@ export function PaymentProcessing() {
     </section>
   );
 }
-
-export function PaymentCompletionHandoff() {
-  const transaction = useKioskStore((state) => state.completedTransaction);
-  if (!transaction) return null;
-  return <section role="status" className="mx-auto max-w-2xl rounded-2xl border border-border bg-white p-6">
-    <h1 className="text-2xl font-bold">Simulated payment completed</h1>
-    <p className="mt-3">The completed transaction is ready for Step 5. Its confirmation screen will be added in that phase.</p>
-  </section>;
-}
