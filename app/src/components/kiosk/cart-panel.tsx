@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ArrowRight, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
@@ -12,7 +11,7 @@ export function CartPanel() {
   const addItem = useKioskStore((state) => state.addItem);
   const decreaseItem = useKioskStore((state) => state.decreaseItem);
   const removeItem = useKioskStore((state) => state.removeItem);
-  const [showNextStepMessage, setShowNextStepMessage] = useState(false);
+  const reviewOrder = useKioskStore((state) => state.reviewOrder);
   const lines = getOrderLines(items);
   const count = getItemCount(items);
   const total = getTotalCentavos(items);
@@ -74,15 +73,10 @@ export function CartPanel() {
           <p aria-label="Order total" className="text-3xl font-bold tracking-tight tabular-nums">{formatMoney(total)}</p>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">All prices in Philippine pesos.</p>
-        <Button disabled={items.length === 0} onClick={() => setShowNextStepMessage(true)} className="mt-6 min-h-14 w-full rounded-xl text-base font-semibold shadow-none">
+        <Button disabled={items.length === 0} onClick={reviewOrder} className="mt-6 min-h-14 w-full rounded-xl text-base font-semibold shadow-none">
           Continue <ArrowRight aria-hidden="true" className="ml-2 h-5 w-5" />
         </Button>
-        <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">Next: review your order · available in Step 2</p>
-        {showNextStepMessage && items.length > 0 && (
-          <p role="status" className="mt-3 rounded-lg border border-primary/15 bg-primary/5 p-3 text-sm leading-5 text-primary">
-            Order Summary will be available in Step 2. Your selected items stay here for now.
-          </p>
-        )}
+        <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">Next: review your order</p>
       </div>
     </aside>
   );

@@ -18,6 +18,8 @@ export interface CartItem {
   readonly quantity: number;
 }
 
+export type KioskScreen = "items" | "summary" | "method";
+
 export interface OrderLine extends Product {
   readonly quantity: number;
   readonly subtotalCentavos: number;
